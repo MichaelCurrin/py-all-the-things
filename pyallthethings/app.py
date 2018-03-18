@@ -18,7 +18,7 @@ def verify(word):
     """
     return all(
         (
-            4 <= len(word) <= 10,
+            5 <= len(word) <= 10,
             word[0].isalpha(),
             word[-1].isalpha()
         )
@@ -36,70 +36,74 @@ words = data.keys()
 # to a dict. But unnecessary in final app.
 words = sorted(words)
 
-# Rules are enforced such that they are mutually exclusive. Which means that
-# having a p and single vowel means the next letter is not a vowel. And the p
-# group means there is no vowel or y after the p. However, if a word has
-# multiple p letters in it, the word could be allocated to one group for one
-# rule and also another group for another rule, so there could be duplicates.
-# Omit matches for just a p in the middle, which is too broad.
+# TODO: Add re.IGNORECASE throughout.
+
+# Rules are written to be as narrow as possible, such that the part of word
+# which has a 'p' in it will be allocated to one of the groupings or none
+# at all. However, the word can existing in multiple groupings, if the
+# letter 'p' appears in the word multiple times and they match different rules.
 groupings = {
+    'p_and_ee_sound': {
+        'start': {
+            'pattern': re.compile(r"^p((ea)|(ee)|(ie)|(ye)).+"),
+            'matches': []
+        },
+        'middle': {
+            'pattern': re.compile(r".+p((ea)|(ee)|(ie)|(ye)).+"),
+            'matches': []
+        },
+        'end': {
+            'pattern': re.compile(r".+p((ea)|(ee)|(ie)|(ye))$"),
+            'matches': []
+        },
+        'replace_pattern': re.compile(r"p((ea)|(ee)|(ie)|(ye))")
+    },
     'p_vowel_y': {
         'start': {
-            'pattern': re.compile(r"^p[aeiou]y.+"),
+            'pattern': re.compile(r"^p[aeo]y.+"),
             'matches': []
         },
         'middle': {
-            'pattern': re.compile(r".+p[aeiou]y.+"),
+            'pattern': re.compile(r".+p[aeo]y.+"),
             'matches': []
         },
         'end': {
-            'pattern': re.compile(r".+p[aeiou]y$"),
+            'pattern': re.compile(r".+.p[aeo]y$"),
             'matches': []
         },
     },
-    'p_y_vowel': {
+    # The letter between the 'p' and the 'y' could be removed to change
+    # the sound of the word. This relates to the rule above.
+    'p_something_y': {
         'start': {
-            'pattern': re.compile(r"^py[aeiou].+"),
+            'pattern': re.compile(r"^p[^aeo]y+"),
             'matches': []
         },
         'middle': {
-            'pattern': re.compile(r".+py[aeiou].+"),
+            'pattern': re.compile(r".+p[^aeo]y.+"),
             'matches': []
         },
         'end': {
-            'pattern': re.compile(r".+py[aeiou]$"),
+            'pattern': re.compile(r".+p[^aeo]y$"),
             'matches': []
         },
     },
-    'p_double_vowel': {
+    'py_then_vowel': {
         'start': {
-            'pattern': re.compile(r"^p[aeiou]{2}.+"),
+            'pattern': re.compile(r"^py[aeiouy].+"),
             'matches': []
         },
         'middle': {
-            'pattern': re.compile(r".+p[aeiou]{2}.+"),
+            'pattern': re.compile(r".+py[aeiouy].+"),
             'matches': []
         },
         'end': {
-            'pattern': re.compile(r".+p[aeiou]{2}$"),
+            'pattern': re.compile(r".+py[aeiouy]$"),
             'matches': []
         },
     },
-    'p_vowel': {
-        'start': {
-            'pattern': re.compile(r"^p[aeiou].+"),
-            'matches': []
-        },
-        'middle': {
-            'pattern': re.compile(r".+p[aeiou].+"),
-            'matches': []
-        },
-        'end': {
-            'pattern': re.compile(r".+p[aeiou]$"),
-            'matches': []
-        },
-    },
-    'py': {
+    # This also covers words ending in py.
+    'py_then_no_vowel': {
         'start': {
             'pattern': re.compile(r"^py[^aeiouy].+"),
             'matches': []
@@ -113,13 +117,56 @@ groupings = {
             'matches': []
         },
     },
+    # Single vowel after a 'p' and the sound should be natural when it is
+    # replaced by a y.
+    'p_and_natural_vowel': {
+        'start': {
+            'pattern': re.compile(r"^p[ei][^aeiouy].+"),
+            'matches': []
+        },
+        'middle': {
+            'pattern': re.compile(r".+p[ei][^aeiouy].+"),
+            'matches': []
+        },
+        'end': {
+            'pattern': re.compile(r".+p[ei]$"),
+            'matches': []
+        },
+    },
+    # Single vowel after a 'p' and the sound will probably sound forced
+    # when it is replaced by a y. But perhaps there will be something useful
+    # in here. The end pattern matches on a consonant or end of word.
+    'p_and_forced_vowel': {
+        'start': {
+            'pattern': re.compile(r"^p[aou][^aeiouy]+"),
+            'matches': []
+        },
+        'middle': {
+            'pattern': re.compile(r".+p[aou][^aeiouy].+"),
+            'matches': []
+        },
+        'end': {
+            'pattern': re.compile(r".+p[aou][^aeiouy]?$"),
+            'matches': []
+        },
+    },
+    # Note that for this grouping, there is no pattern looking for the
+    # middle of the word, as it would be too broad to be useful.
+    # The end pattern matches on a consonant or end of word.
     'p': {
         'start': {
             'pattern': re.compile(r"^p[^aeiouy].+"),
             'matches': []
         },
         'end': {
-            'pattern': re.compile(r".+p$"),
+            'pattern': re.compile(r".+p[^aeiouy]?$"),
+            'matches': []
+        },
+    },
+    # A 'p' could be added in front of this.
+    'starts_with_y': {
+        'start': {
+            'pattern': re.compile(r"^y.+"),
             'matches': []
         },
     },
@@ -134,18 +181,42 @@ for word in words:
 
     if verify(word):
         for group, positions in groupings.items():
+            if group != 'p_and_ee_sound':
+                continue
             for position, values in positions.items():
+                if position == 'replace_pattern':
+                    continue
                 if values['pattern'].search(word):
-                    values['matches'].append(word)
+                    # Get the replace_pattern from a level up.
+                    replace_pattern = positions.get('replace_pattern', None)
+                    if replace_pattern is not None:
+                        modified_word = replace_pattern.sub('py', word)
+                    else:
+                        modified_word = None
+
+                    values['matches'].append(
+                        (word, modified_word)
+                    )
 
 for group, positions in groupings.items():
     print(group)
     print("========")
     for position, values in positions.items():
+        if position == 'replace_pattern':
+            continue
         print(position)
         print("-------")
         matches = values['matches']
         print(len(matches))
-        print(sorted(matches, key=len)[:20])
+        # Sort by length of word after subsitution.
+        print(sorted(matches, key=lambda x: len(x[1]))[:20])
         print()
     print()
+
+# TODO: Change structure to use keys for replaced words and then values
+# as the words which were used to get to it.
+# It can be across all groups as we care about the result, but still
+# split into start/middle/end. Or maybe include the groupings to see how
+# it got to that (should be one but could be multiple).
+
+# TODO: Add more replace patterns.
