@@ -12,7 +12,8 @@ DICTIONARY_PATH = "/home/michael/public_repos/dictionary/dictionary.json"
 
 
 def verify(word):
-    """Expect a word and return True if is valid or False otherwise.
+    """
+    Expect a word and return True if is valid or False otherwise.
 
     Validate word on length and not starting or ending with punctuation.
     """
@@ -32,7 +33,7 @@ with open(DICTIONARY_PATH) as f_in:
 # to iterate over.
 words = data.keys()
 # TEMP
-# Useful for testing to get the same results each time when JSOS is converted
+# Useful for testing to get the same results each time when JSON is converted
 # to a dict. But unnecessary in final app.
 words = sorted(words)
 
