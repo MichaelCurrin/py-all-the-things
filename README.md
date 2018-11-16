@@ -5,4 +5,4 @@ This project is a tool to generate Python package project names which follow the
 
 The logic is to iterate through all words in the English language, exclude the words which are too long or short and filter to the words following the required pattern.
 
-For documentation, the [docs](docs) folder.
+For documentation, see the [docs](docs) folder.
