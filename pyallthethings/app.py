@@ -6,7 +6,7 @@ import json
 import re
 
 
-# TODO: This from a dictionary repo on Github. Refine this approach,
+# TODO: This is from a dictionary repo on Github. Refine this approach,
 # possibly with a different source.
 DICTIONARY_PATH = "/home/michael/public_repos/dictionary/dictionary.json"
 
@@ -213,6 +213,7 @@ for group, positions in groupings.items():
         print(sorted(matches, key=lambda x: len(x[1]))[:20])
         print()
     print()
+
 
 # TODO: Change structure to use keys for replaced words and then values
 # as the words which were used to get to it.
