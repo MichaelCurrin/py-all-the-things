@@ -1,7 +1,4 @@
-# Byte-compiled / optimized / DLL files
+# Compiled Python binaries.
 __pycache__/
-*.py[cod]
-*$py.class
 
-# Symlink or actual directory for virtual environment
-virtualenv*
+venv
